@@ -161,5 +161,8 @@ Educational project for KhNURE coursework.
 
 ## Author
 
-Master's student, Software Engineering
-KhNURE, 2023-2024
+**Голодніков Дмитро**
+
+Master's student, Software Engineering (ІПЗм-24-2)
+
+KhNURE, 2025-2026
