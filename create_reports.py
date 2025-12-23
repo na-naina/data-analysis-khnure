@@ -28,13 +28,14 @@ REPORTS_DIR = os.path.join(SCRIPT_DIR, 'reports')
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # University info
-UNIVERSITY = "МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ"
-UNIVERSITY_NAME = "ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ"
-FACULTY = "Факультет комп'ютерних наук"
+UNIVERSITY = "Міністерство освіти і науки України"
+UNIVERSITY_NAME = "Харківський національний університет радіоелектроніки"
 DEPARTMENT = "Кафедра програмної інженерії"
 DISCIPLINE = "Інтелектуальний аналіз даних"
 TEACHER = "ст. викл. Онищенко К.Г."
-STUDENT = "студент групи МІПЗс-24-1"
+STUDENT_NAME = "Голодніков Дмитро"
+STUDENT_GROUP = "ІПЗм-24-2"
+GITHUB_URL = "https://github.com/na-naina/data-analysis-khnure"
 
 
 # ==================== DOCUMENT HELPERS ====================
@@ -81,14 +82,18 @@ def add_paragraph(doc, text, font_size=14, bold=False, first_line_indent=1.25, s
 
 
 def add_heading(doc, text, level=1):
-    """Add a heading."""
-    h = doc.add_heading(text, level=level)
-    for run in h.runs:
-        run.font.name = 'Times New Roman'
-        run.font.size = Pt(14)
-        run.font.bold = True
-        run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-    return h
+    """Add a heading - black color, bold, no blue."""
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = p.add_run(text)
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+    run.font.bold = True
+    run.font.color.rgb = None  # Black color
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+    p.paragraph_format.space_before = Pt(12)
+    p.paragraph_format.space_after = Pt(6)
+    return p
 
 
 def add_image_with_caption(doc, image_path, caption, width=5.5):
@@ -111,25 +116,58 @@ def add_image_with_caption(doc, image_path, caption, width=5.5):
 
 def create_title_page(doc, work_type, work_number, work_title):
     """Create a title page according to DSTU 3008:2015."""
-    # Ministry
-    add_centered_paragraph(doc, UNIVERSITY, font_size=14)
-    add_centered_paragraph(doc, UNIVERSITY_NAME, font_size=14, bold=True, space_after=6)
-    add_centered_paragraph(doc, FACULTY, font_size=14)
-    add_centered_paragraph(doc, DEPARTMENT, font_size=14, space_after=48)
+    # Ministry - centered, regular
+    add_centered_paragraph(doc, UNIVERSITY, font_size=14, space_after=0)
+    add_centered_paragraph(doc, UNIVERSITY_NAME, font_size=14, space_after=0)
+    add_centered_paragraph(doc, DEPARTMENT, font_size=14, space_after=0)
 
-    # Report title
-    add_centered_paragraph(doc, "ЗВІТ", font_size=16, bold=True, space_after=6)
-    add_centered_paragraph(doc, f"з {work_type} №{work_number}", font_size=14, space_after=6)
-    add_centered_paragraph(doc, f'з дисципліни "{DISCIPLINE}"', font_size=14, space_after=12)
-    add_centered_paragraph(doc, f'на тему: "{work_title}"', font_size=14, bold=True, space_after=72)
+    # Empty lines for spacing
+    for _ in range(8):
+        add_centered_paragraph(doc, "", font_size=14)
 
-    # Right-aligned info block
+    # Report title - centered
+    add_centered_paragraph(doc, "ЗВІТ", font_size=14, space_after=6)
+    if work_number:
+        add_centered_paragraph(doc, f"{work_type} № {work_number}", font_size=14, space_after=6)
+    else:
+        add_centered_paragraph(doc, work_type, font_size=14, space_after=6)
+    add_centered_paragraph(doc, f'з дисципліни «{DISCIPLINE}»', font_size=14, space_after=6)
+    add_centered_paragraph(doc, f'на тему «{work_title}»', font_size=14, space_after=0)
+
+    # Empty lines
+    for _ in range(6):
+        add_centered_paragraph(doc, "", font_size=14)
+
+    # Student and teacher info - left aligned with tabs
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = p.add_run(f"Виконав:\n{STUDENT}\n\nПеревірив:\n{TEACHER}")
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = p.add_run("Виконав")
     run.font.name = 'Times New Roman'
     run.font.size = Pt(14)
-    p.paragraph_format.space_after = Pt(120)
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = p.add_run(f"студент групи {STUDENT_GROUP}\t\t\t\t\t{STUDENT_NAME}")
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+
+    add_centered_paragraph(doc, "", font_size=14)
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = p.add_run("Перевірив")
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run = p.add_run(f"{TEACHER}")
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+
+    # Empty lines
+    for _ in range(4):
+        add_centered_paragraph(doc, "", font_size=14)
 
     # City and year
     add_centered_paragraph(doc, "Харків 2024", font_size=14)
@@ -170,6 +208,37 @@ def add_conclusions_section(doc, conclusions):
     add_paragraph(doc, conclusions, first_line_indent=1.25)
 
 
+def add_github_link(doc):
+    """Add GitHub repository link at the end of the report."""
+    add_heading(doc, "ПОСИЛАННЯ", level=1)
+    p = doc.add_paragraph()
+    run = p.add_run(f"Код проєкту доступний у репозиторії GitHub: ")
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+    run = p.add_run(GITHUB_URL)
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+    run.font.underline = True
+
+
+def add_code_block(doc, code, caption=None):
+    """Add a code block with monospace font."""
+    if caption:
+        p = doc.add_paragraph()
+        run = p.add_run(caption)
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(12)
+        run.font.italic = True
+        p.paragraph_format.space_after = Pt(6)
+
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Cm(1)
+    run = p.add_run(code)
+    run.font.name = 'Consolas'
+    run.font.size = Pt(10)
+    p.paragraph_format.space_after = Pt(12)
+
+
 def save_document(doc, filename):
     """Save document as DOCX and convert to PDF."""
     docx_path = os.path.join(REPORTS_DIR, f"{filename}.docx")
@@ -202,7 +271,7 @@ def generate_lab1_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "лабораторної роботи", "1", "Регресійний аналіз")
+    create_title_page(doc, "Лабораторної роботи", "1", "Регресійний аналіз")
 
     add_goal_section(doc,
         "Ознайомитися з методами регресійного аналізу даних. "
@@ -304,6 +373,7 @@ def generate_lab1_report():
         "Візуалізовано результати регресійного аналізу з довірчими інтервалами та діагностичними графіками. "
         "Отримані знання можуть бути застосовані для прогнозування та аналізу залежностей у реальних даних.")
 
+    add_github_link(doc)
     save_document(doc, 'lab1_regression')
 
 
@@ -317,7 +387,7 @@ def generate_lab2_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "лабораторної роботи", "2", "Кластеризація та дерева рішень")
+    create_title_page(doc, "Лабораторної роботи", "2", "Кластеризація та дерева рішень")
 
     add_goal_section(doc,
         "Ознайомитися з методами кластеризації даних та класифікації за допомогою дерев рішень. "
@@ -382,6 +452,7 @@ def generate_lab2_report():
         "Побудовано та візуалізовано дерево рішень для задачі класифікації. "
         "Оцінено якість класифікації за допомогою матриці помилок та метрик accuracy, precision, recall.")
 
+    add_github_link(doc)
     save_document(doc, 'lab2_clustering')
 
 
@@ -395,7 +466,7 @@ def generate_lab3_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "лабораторної роботи", "3", "Алгоритм Apriori та асоціативні правила")
+    create_title_page(doc, "Лабораторної роботи", "3", "Алгоритм Apriori та асоціативні правила")
 
     add_goal_section(doc,
         "Ознайомитися з алгоритмом Apriori для пошуку частих наборів елементів та "
@@ -452,6 +523,7 @@ def generate_lab3_report():
         "Досліджено вплив порогових значень support та confidence на кількість знайдених правил. "
         "Отримані знання застосовуються у рекомендаційних системах та маркетинговому аналізі.")
 
+    add_github_link(doc)
     save_document(doc, 'lab3_apriori')
 
 
@@ -465,7 +537,7 @@ def generate_lab4_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "лабораторної роботи", "4", "Генетичні алгоритми")
+    create_title_page(doc, "Лабораторної роботи", "4", "Генетичні алгоритми")
 
     add_goal_section(doc,
         "Ознайомитися з генетичними алгоритмами як методом евристичної оптимізації. "
@@ -529,6 +601,7 @@ def generate_lab4_report():
         "турнірної, рулеткової та рангової. Проведено експерименти з багатовимірною оптимізацією. "
         "Генетичні алгоритми показали здатність знаходити глобальні оптимуми складних функцій.")
 
+    add_github_link(doc)
     save_document(doc, 'lab4_genetic_algorithms')
 
 
@@ -542,7 +615,7 @@ def generate_practical1_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "практичної роботи", "1", "Метод найменших квадратів (OLS)")
+    create_title_page(doc, "Практичної роботи", "1", "Метод найменших квадратів (OLS)")
 
     add_goal_section(doc,
         "Вивчити метод найменших квадратів (Ordinary Least Squares, OLS) для побудови "
@@ -587,6 +660,7 @@ def generate_practical1_report():
         "Виконано діагностику моделі та перевірено виконання припущень методу. "
         "Результати можуть бути використані для прогнозування продуктивності праці.")
 
+    add_github_link(doc)
     save_document(doc, 'practical1_ols')
 
 
@@ -600,7 +674,7 @@ def generate_practical2_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "практичної роботи", "2", "Класифікація тексту методом TF-IDF")
+    create_title_page(doc, "Практичної роботи", "2", "Класифікація тексту методом TF-IDF")
 
     add_goal_section(doc,
         "Вивчити методи представлення тексту у вигляді числових векторів. "
@@ -642,6 +716,7 @@ def generate_practical2_report():
         "Документ D1 виявився найбільш релевантним запиту з similarity = 0.695. "
         "TF-IDF широко застосовується в пошукових системах та інформаційному пошуку.")
 
+    add_github_link(doc)
     save_document(doc, 'practical2_tfidf')
 
 
@@ -655,7 +730,7 @@ def generate_research_report():
         section.left_margin = Cm(2.5)
         section.right_margin = Cm(1.5)
 
-    create_title_page(doc, "індивідуального завдання (ІНДЗ)", "",
+    create_title_page(doc, "Індивідуального завдання (ІНДЗ)", "",
                       "Порівняння RNN та LSTM для обробки природної мови")
 
     add_goal_section(doc,
@@ -711,6 +786,7 @@ def generate_research_report():
         "дозволяючи інформації зберігатися на багатьох часових кроках. "
         "Рекомендується використовувати LSTM для задач NLP з довгими текстами.")
 
+    add_github_link(doc)
     save_document(doc, 'research_rnn_lstm')
 
 
